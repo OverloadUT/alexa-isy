@@ -1,3 +1,10 @@
+# Grunt AWS Lambda
+dist
+event.json
+
+# Dotenv files
+*.env
+
 # Logs
 logs
 *.log
