@@ -1,8 +1,5 @@
-/**
- * This sample shows how to create a simple Lambda function for handling speechlet requests.
- */
 require('dotenv').load();
-var isy = require("isy")({host:process.env.ISY_HOST,
+var isy = require("isy99")({host:process.env.ISY_HOST,
                           port:process.env.ISY_PORT,
                           user:process.env.ISY_USER,
                           pass:process.env.ISY_PASS,
@@ -11,9 +8,33 @@ var isy = require("isy")({host:process.env.ISY_HOST,
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"; // Allow untrusted self-signed certificates
 
-var args ={
-    path:{"deviceid":encodeURIComponent("1C AB 43 1")}
-};
+var devices = [
+    {name: 'lights', address:'1815'},
+    {name: 'living room lights', address:'1815'},
+    {name: 'track lights', address:'1815'},
+    {name: 'front lights', address:'1B B 47 1'},
+    {name: 'front track lights', address:'1B B 47 1'},
+    {name: 'rear lights', address:'1C AB 43 1'},
+    {name: 'rear track lights', address:'1C AB 43 1'},
+    {name: 'kithen lights', address:'1E 67 D9 1'},
+    {name: 'TV', address:{on:'55957', off:'46872'}},
+    {name: 'T.V.', address:{on:'55957', off:'46872'}},
+    {name: 'Television', address:{on:'55957', off:'46872'}},
+    {name: 'bedroom light', address:'1A EA 2A 1'}
+
+];
+
+var actions = [
+    {name: 'on', meaning: 'on', command:'DON'},
+    {name: 'turn on', meaning: 'on', command:'DON'},
+    {name: 'turn up', meaning: 'on', command:'DON'},
+    {name: 'bring up', meaning: 'on', command:'DON'},
+    {name: 'off', meaning: 'off', command:'DOF'},
+    {name: 'turn off', meaning: 'off', command:'DOF'},
+    {name: 'turn down', meaning: 'off', command:'DOF'},
+    {name: 'bring down', meaning: 'off', command:'DOF'},
+    {name: 'kill', meaning: 'off', command:'DFOF'}
+];
 
 // Route the incoming request based on type (LaunchRequest, IntentRequest,
 // etc.) The JSON body of the request is provided in the event parameter.
@@ -21,11 +42,6 @@ exports.handler = function (event, context) {
     try {
         console.log("event.session.application.applicationId=" + event.session.application.applicationId);
         console.log("event.session.user.userId=" + event.session.user.userId);
-
-        /**
-         * Uncomment this if statement and replace application.id with yours
-         * to prevent other voice applications from using this function.
-         */
         
         if (event.session.application.applicationId !== "amzn1.echo-sdk-ams.app.98a84475-c47a-4182-bd67-7b78e2eb5e07") {
             context.fail("Invalid Application ID");
@@ -147,27 +163,64 @@ function getWelcomeResponse(callback) {
     var repromptText = "Unused reprompt text";
     var shouldEndSession = true;
 
-    // console.log("Making request to "+isy_root+"rest/nodes/"+args.path.deviceid+"/")
+    isy.getDeviceInfo("1C AB 43 1", function(err, device){
+        console.log(device);
 
-    isy.getNode("1C AB 43 1", function(err, device){
-    // isy.get(isy_root+"rest/nodes/${deviceid}/", args, function(data, response){
-        // parsed response body as js object 
-        //console.log(data);
+        var speechOutput = "The living room light's address is " + device.address;
 
-
-        // xmldata = xmlParseString(data.toString(), function(err, xmldata){
-            // console.log(xmldata);
-
-            // raw response 
-            //console.log(response);
-
-            console.log(device);
-
-            var speechOutput = "The living room light's address is " + device.address;
-
-            callback(sessionAttributes,
-                     buildSpeechletResponse(cardTitle, speechOutput, repromptText, shouldEndSession));
-        // });
+        callback(sessionAttributes,
+                 buildSpeechletResponse(cardTitle, speechOutput, repromptText, shouldEndSession));
     });
+}
+
+function intentAdjustDevice(intent, session, callback) {
+    var didYouMean = require("didyoumean");
+    didYouMean.returnWinningObject = true;
+
+    var sessionAttributes = {};
+    var cardTitle = "Adjust House Device";
+    var repromptText = "";
+    var shouldEndSession = true;
+
+    console.log(intent.slots.Device);
+
+    var spokenDevice = intent.slots.Device.value;
+    var device = didYouMean(spokenDevice, devices, 'name');
+
+    if (device === null) {
+        callback(sessionAttributes,
+                 buildSpeechletResponse(cardTitle, "Sorry, I am not sure which device that is", repromptText, shouldEndSession));
+    } else {
+        var action = didYouMean(intent.slots.Action.value, actions, 'name');
+        if (action === null) {
+            callback(sessionAttributes,
+                     buildSpeechletResponse(cardTitle, "Sorry, I do not understand what Action that is", repromptText, shouldEndSession));
+        } else {
+            var address;
+            var command;
+            if(typeof device.address === 'string') {
+                address = device.address;
+                command = action.command;
+            } else {
+                address = device.address[action.meaning];
+                command = 'DON';
+            }
+
+            console.log('isy.sendDeviceCommand',address, command);
+            isy.sendDeviceCommand(address, command, function(err, statusCode){
+                if(err) {
+                    console.log(err);
+                    callback(sessionAttributes,
+                             buildSpeechletResponse(cardTitle, "There was an issue connecting to the home automation controller", repromptText, shouldEndSession));
+                } else {
+                    console.log(statusCode);
+                    var speechOutput = "Done!";
+                    callback(sessionAttributes,
+                             buildSpeechletResponse(cardTitle, speechOutput, repromptText, shouldEndSession));
+                }
+            });
+        }
+
+    }
 }
 

@@ -4,10 +4,14 @@
   "description": "Alexa (Amazon Echo) app for interacting with an ISY99 home automation controller",
   "main": "alexaISY.js",
   "dependencies": {
+    "didyoumean": "^1.2.1",
     "dotenv": "^1.1.0",
-    "isy": "^0.0.1"
+    "isy99": "file:..\\node-isy99"
   },
-  "bundledDependencies": ["dotenv", "isy"],
+  "bundledDependencies": [
+    "dotenv",
+    "isy99"
+  ],
   "devDependencies": {
     "chai": "^3.0.0",
     "grunt": "^0.4.5",
