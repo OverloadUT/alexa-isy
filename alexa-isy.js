@@ -16,7 +16,7 @@ exports.handler = function (event, context) {
         console.log("event.session.application.applicationId=" + event.session.application.applicationId);
         console.log("event.session.user.userId=" + event.session.user.userId);
         
-        if (event.session.application.applicationId !== "amzn1.echo-sdk-ams.app.98a84475-c47a-4182-bd67-7b78e2eb5e07") {
+        if (event.session.application.applicationId !== "amzn1.echo-sdk-ams.app." + process.env.ALEXA_APP_ID) {
             context.fail("Invalid Application ID");
         }
 
