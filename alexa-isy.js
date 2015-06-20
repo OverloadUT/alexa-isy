@@ -1,4 +1,5 @@
 require('dotenv').load();
+var config = require('./houseconfig.js');
 var isy = require("isy99")({host:process.env.ISY_HOST,
                           port:process.env.ISY_PORT,
                           user:process.env.ISY_USER,
@@ -7,34 +8,6 @@ var isy = require("isy99")({host:process.env.ISY_HOST,
                         });
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"; // Allow untrusted self-signed certificates
-
-var devices = [
-    {name: 'lights', address:'1815'},
-    {name: 'living room lights', address:'1815'},
-    {name: 'track lights', address:'1815'},
-    {name: 'front lights', address:'1B B 47 1'},
-    {name: 'front track lights', address:'1B B 47 1'},
-    {name: 'rear lights', address:'1C AB 43 1'},
-    {name: 'rear track lights', address:'1C AB 43 1'},
-    {name: 'kithen lights', address:'1E 67 D9 1'},
-    {name: 'TV', address:{on:'55957', off:'46872'}},
-    {name: 'T.V.', address:{on:'55957', off:'46872'}},
-    {name: 'Television', address:{on:'55957', off:'46872'}},
-    {name: 'bedroom light', address:'1A EA 2A 1'}
-
-];
-
-var actions = [
-    {name: 'on', meaning: 'on', command:'DON'},
-    {name: 'turn on', meaning: 'on', command:'DON'},
-    {name: 'turn up', meaning: 'on', command:'DON'},
-    {name: 'bring up', meaning: 'on', command:'DON'},
-    {name: 'off', meaning: 'off', command:'DOF'},
-    {name: 'turn off', meaning: 'off', command:'DOF'},
-    {name: 'turn down', meaning: 'off', command:'DOF'},
-    {name: 'bring down', meaning: 'off', command:'DOF'},
-    {name: 'kill', meaning: 'off', command:'DFOF'}
-];
 
 // Route the incoming request based on type (LaunchRequest, IntentRequest,
 // etc.) The JSON body of the request is provided in the event parameter.
@@ -131,8 +104,8 @@ function buildSpeechletResponse(title, output, repromptText, shouldEndSession) {
         },
         card: {
             type: "Simple",
-            title: "SessionSpeechlet - " + title,
-            content: "SessionSpeechlet - " + output
+            title: "ISY - " + title,
+            content: output
         },
         reprompt: {
             outputSpeech: {
@@ -158,19 +131,15 @@ function buildResponse(sessionAttributes, speechletResponse) {
 function getWelcomeResponse(callback) {
     // If we wanted to initialize the session to have some attributes we could add those here.
     var sessionAttributes = {};
-    var cardTitle = "Welcome";
+    var cardTitle = "The House is Ready";
 
-    var repromptText = "Unused reprompt text";
-    var shouldEndSession = true;
+    var repromptText = "You can say things like: 'turn on the lights,' or 'turn off the television.'";
+    var shouldEndSession = false;
 
-    isy.getDeviceInfo("1C AB 43 1", function(err, device){
-        console.log(device);
+    var speechOutput = "The House is ready for a command.";
 
-        var speechOutput = "The living room light's address is " + device.address;
-
-        callback(sessionAttributes,
-                 buildSpeechletResponse(cardTitle, speechOutput, repromptText, shouldEndSession));
-    });
+    callback(sessionAttributes,
+             buildSpeechletResponse(cardTitle, speechOutput, repromptText, shouldEndSession));
 }
 
 function intentAdjustDevice(intent, session, callback) {
@@ -182,16 +151,16 @@ function intentAdjustDevice(intent, session, callback) {
     var repromptText = "";
     var shouldEndSession = true;
 
-    console.log(intent.slots.Device);
+    console.log("intentAdjustDevice", intent.slots);
 
     var spokenDevice = intent.slots.Device.value;
-    var device = didYouMean(spokenDevice, devices, 'name');
+    var device = didYouMean(spokenDevice, config.devices, 'name');
 
     if (device === null) {
         callback(sessionAttributes,
                  buildSpeechletResponse(cardTitle, "Sorry, I am not sure which device that is", repromptText, shouldEndSession));
     } else {
-        var action = didYouMean(intent.slots.Action.value, actions, 'name');
+        var action = didYouMean(intent.slots.Action.value, config.actions, 'name');
         if (action === null) {
             callback(sessionAttributes,
                      buildSpeechletResponse(cardTitle, "Sorry, I do not understand what Action that is", repromptText, shouldEndSession));
@@ -199,15 +168,22 @@ function intentAdjustDevice(intent, session, callback) {
             var address;
             var command;
             if(typeof device.address === 'string') {
+                // Simple device with a single address for all commands
                 address = device.address;
                 command = action.command;
             } else {
+                // Complex device with different addresses for on and off
                 address = device.address[action.meaning];
-                command = 'DON';
+                if (typeof address === 'string') {
+                    command = 'DON';
+                } else {
+                    // Even more complex device (a program most likely) that requires custom commands with each address
+                    address = device.address[action.meaning].address;
+                    command = device.address[action.meaning].cmd;
+                }
             }
 
-            console.log('isy.sendDeviceCommand',address, command);
-            isy.sendDeviceCommand(address, command, function(err, statusCode){
+            var commandCallback = function(err, statusCode){
                 if(err) {
                     console.log(err);
                     callback(sessionAttributes,
@@ -218,7 +194,15 @@ function intentAdjustDevice(intent, session, callback) {
                     callback(sessionAttributes,
                              buildSpeechletResponse(cardTitle, speechOutput, repromptText, shouldEndSession));
                 }
-            });
+            };
+
+            if(device.type == "program") {
+                console.log('isy.sendProgramCommand',address, command);
+                isy.sendProgramCommand(address, command, commandCallback);
+            } else {
+                console.log('isy.sendDeviceCommand',address, command);
+                isy.sendDeviceCommand(address, command, commandCallback);
+            }
         }
 
     }
