@@ -23,6 +23,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "deploy": "deploy.bat",
+    "utterances": "node generate-sample-utterances.js > sample-utterances.txt",
     "invoke": "grunt lambda_invoke"
   },
   "author": "Greg \"OverloadUT\" Laabs <OverloadUT@gmail.com>",
