@@ -1,11 +1,11 @@
 require('dotenv').load();
 var config = require('./houseconfig.js');
 var isy = require("isy99")({host:process.env.ISY_HOST,
-                          port:process.env.ISY_PORT,
-                          user:process.env.ISY_USER,
-                          pass:process.env.ISY_PASS,
-                          https:process.env.ISY_HTTPS
-                        });
+                            port:process.env.ISY_PORT,
+                            user:process.env.ISY_USER,
+                            pass:process.env.ISY_PASS,
+                            https:process.env.ISY_HTTPS
+                          });
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"; // Allow untrusted self-signed certificates
 
@@ -208,3 +208,11 @@ function intentAdjustDevice(intent, session, callback) {
     }
 }
 
+if (process.env.NODE_ENV === 'test') {
+    module.exports._private = {
+        onSessionStarted: onSessionStarted,
+        onLaunch: onLaunch,
+        onIntent: onIntent,
+        onSessionEnded: onSessionEnded
+    };
+}
