@@ -11,6 +11,9 @@ event.json
 *.env
 !test/**/*.env
 
+# WebStorm
+.idea
+
 # Logs
 logs
 *.log

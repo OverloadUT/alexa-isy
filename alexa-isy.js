@@ -17,7 +17,7 @@ exports.handler = function (event, context) {
         console.log("event.session.user.userId=" + event.session.user.userId);
         
         if (event.session.application.applicationId !== "amzn1.echo-sdk-ams.app." + process.env.ALEXA_APP_ID) {
-            context.fail("Invalid Application ID");
+            return context.fail("Invalid Application ID");
         }
 
         if (event.session.new) {
@@ -40,6 +40,9 @@ exports.handler = function (event, context) {
             onSessionEnded(event.request, event.session);
 
             context.succeed();
+        } else {
+            console.log("Got an unknown RequestType: " + event.request.type);
+            context.fail("Unknown request type: " + event.request.type);
         }
     } catch (e) {
         context.fail("Exception: " + e);
@@ -76,8 +79,8 @@ function onIntent(intentRequest, session, callback) {
 
     if ("AdjustDeviceIntent" === intentName) {
         intentAdjustDevice(intent, session, callback);
-    } else if ("ActivateSceneIntent" === intentName) {
-        intentActivateScene(intent, session, callback);
+    //} else if ("ActivateSceneIntent" === intentName) {
+    //    intentActivateScene(intent, session, callback);
     } else {
         throw "Invalid intent";
     }
@@ -146,7 +149,7 @@ function intentAdjustDevice(intent, session, callback) {
     var didYouMean = require("didyoumean");
     didYouMean.returnWinningObject = true;
 
-    var sessionAttributes = {};
+    var sessionAttributes = session.attributes || {};
     var cardTitle = "Adjust House Device";
     var repromptText = "";
     var shouldEndSession = true;
@@ -210,9 +213,7 @@ function intentAdjustDevice(intent, session, callback) {
 
 if (process.env.NODE_ENV === 'test') {
     module.exports._private = {
-        onSessionStarted: onSessionStarted,
-        onLaunch: onLaunch,
-        onIntent: onIntent,
-        onSessionEnded: onSessionEnded
+        isy: isy,
+        config: config
     };
 }

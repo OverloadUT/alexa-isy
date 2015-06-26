@@ -27,7 +27,7 @@ module.exports = function(grunt) {
       coverage: {
         src: 'test',
         options: {}
-      },
+      }
     },
     lambda_deploy: {
       default: {
@@ -44,13 +44,13 @@ module.exports = function(grunt) {
     jshint: {
       default: {
         src: ['*.js', '*.json']
-      },
+      }
     },
     watch: {
       default: {
         files: ['*.js', 'test/**/*.js', '*.json'],
         tasks: ['jshint', 'mocha_istanbul:coverage']
-      },
+      }
     }
   });
 
@@ -63,4 +63,5 @@ module.exports = function(grunt) {
 
   // Default task(s).
   grunt.registerTask('default', ['jshint']);
+  grunt.registerTask('coverage', ['mocha_istanbul:coverage']);
 };

@@ -3,6 +3,10 @@
     "describe",
     "it",
     "before",
-    "after"
-  ]
+    "true",
+    "beforeEach",
+    "after",
+    "afterEach"
+  ],
+  "expr": true
 }
