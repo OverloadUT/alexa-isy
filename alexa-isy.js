@@ -1,13 +1,29 @@
 require('dotenv').load();
-var config = require('./houseconfig.js');
 var isy = require("isy99")({host:process.env.ISY_HOST,
                             port:process.env.ISY_PORT,
                             user:process.env.ISY_USER,
                             pass:process.env.ISY_PASS,
                             https:process.env.ISY_HTTPS
                           });
+var config = {
+    // TODO handling natural language actions should really be moved to
+    // separate intents, as the Alexa code is likely much better at handling
+    // it than we will be
+    actions: require('./actions.json').actions,
+    devices: loadDevices()
+};
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"; // Allow untrusted self-signed certificates
+
+function loadDevices() {
+    // TODO HACK to load devices from a static file for now.
+    // This should be moved to a database of some sort so that it can be configured for each user.
+    try {
+        return require('./devices.json').devices;
+    } catch (e) {
+        return {};
+    }
+}
 
 // Route the incoming request based on type (LaunchRequest, IntentRequest,
 // etc.) The JSON body of the request is provided in the event parameter.

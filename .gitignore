@@ -1,7 +1,6 @@
 # Project Specific
-sample-utterances.txt
 outputfile.json
-houseconfig.js
+devices.json
 
 # Grunt AWS Lambda
 dist

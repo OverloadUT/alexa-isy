@@ -1,0 +1,49 @@
+{
+  "actions": [
+    {
+      "name": "on",
+      "meaning": "on",
+      "command": "DON"
+    },
+    {
+      "name": "turn on",
+      "meaning": "on",
+      "command": "DON"
+    },
+    {
+      "name": "turn up",
+      "meaning": "on",
+      "command": "DON"
+    },
+    {
+      "name": "bring up",
+      "meaning": "on",
+      "command": "DON"
+    },
+    {
+      "name": "off",
+      "meaning": "off",
+      "command": "DOF"
+    },
+    {
+      "name": "turn off",
+      "meaning": "off",
+      "command": "DOF"
+    },
+    {
+      "name": "turn down",
+      "meaning": "off",
+      "command": "DOF"
+    },
+    {
+      "name": "bring down",
+      "meaning": "off",
+      "command": "DOF"
+    },
+    {
+      "name": "kill",
+      "meaning": "off",
+      "command": "DFOF"
+    }
+  ]
+}
