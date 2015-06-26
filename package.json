@@ -31,5 +31,6 @@
     "invoke": "grunt lambda_invoke"
   },
   "author": "Greg \"OverloadUT\" Laabs <OverloadUT@gmail.com>",
-  "license": "MIT"
+  "license": "MIT",
+  "repository" : "OverloadUT/alexa-isy"
 }
