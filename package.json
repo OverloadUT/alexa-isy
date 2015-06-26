@@ -10,6 +10,7 @@
   },
   "devDependencies": {
     "chai": "^3.0.0",
+    "coveralls": "^2.11.2",
     "grunt": "^0.4.5",
     "grunt-aws-lambda": "^0.4.0",
     "grunt-contrib-jshint": "^0.11.2",
@@ -24,7 +25,7 @@
     "sinon-chai": "^2.8.0"
   },
   "scripts": {
-    "test": "grunt coverage",
+    "test": "grunt coveralls",
     "deploy": "deploy.bat",
     "utterances": "node generate-sample-utterances.js > sample-utterances.txt",
     "invoke": "grunt lambda_invoke"

@@ -27,6 +27,17 @@ module.exports = function(grunt) {
       coverage: {
         src: 'test',
         options: {}
+      },
+      coveralls: {
+        src: ['test'], // multiple folders also works
+        options: {
+          coverage:true, // this will make the grunt.event.on('coverage') event listener to be triggered
+          check: {
+            lines: 90,
+            statements: 90
+          },
+          reportFormats: ['cobertura','lcovonly']
+        }
       }
     },
     lambda_deploy: {
@@ -49,6 +60,16 @@ module.exports = function(grunt) {
     }
   });
 
+  // Coveralls support
+  grunt.event.on('coverage', function(lcov, done){
+    require('coveralls').handleInput(lcov, function(err){
+      if (err) {
+        return done(err);
+      }
+      done();
+    });
+  });
+
   grunt.loadNpmTasks('grunt-aws-lambda');
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-contrib-jshint');
@@ -59,4 +80,5 @@ module.exports = function(grunt) {
   // Default task(s).
   grunt.registerTask('default', ['mocha_istanbul:coverage']);
   grunt.registerTask('coverage', ['mocha_istanbul:coverage']);
+  grunt.registerTask('coveralls', ['mocha_istanbul:coveralls']);
 };
