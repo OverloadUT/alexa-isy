@@ -28,7 +28,7 @@
     "sinon-chai": "^2.8.0"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "grunt coverage",
     "deploy": "deploy.bat",
     "utterances": "node generate-sample-utterances.js > sample-utterances.txt",
     "invoke": "grunt lambda_invoke"
