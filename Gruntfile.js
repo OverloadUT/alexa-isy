@@ -41,11 +41,6 @@ module.exports = function(grunt) {
         command: 'deploy.bat'
       }
     },
-    jshint: {
-      default: {
-        src: ['*.js', '*.json']
-      }
-    },
     watch: {
       default: {
         files: ['*.js', 'test/**/*.js', '*.json'],
@@ -62,6 +57,6 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-mocha-istanbul');
 
   // Default task(s).
-  grunt.registerTask('default', ['jshint']);
+  grunt.registerTask('default', ['mocha_istanbul:coverage']);
   grunt.registerTask('coverage', ['mocha_istanbul:coverage']);
 };
