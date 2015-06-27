@@ -1,6 +1,7 @@
 # Project Specific
 outputfile.json
 devices.json
+scenes.json
 
 # Grunt AWS Lambda
 dist

@@ -85,8 +85,12 @@ describe('Adjust Device', function () {
             address: "1"
         },
         {
+            name: 'A device that will error in the ISY99 module',
+            address: "error"
+        },
+        {
             name: 'A device that will fail in the ISY99 module',
-            address: "fail"
+            address: "unsuccessful"
         },
         {
             name: 'Device with different commands for on and off',
@@ -106,10 +110,11 @@ describe('Adjust Device', function () {
 
     beforeEach(function () {
         sendDeviceCommandStub = sinon.stub(lambda._private.isy, 'sendDeviceCommand');
-        sendDeviceCommandStub.callsArgWith(2, null, 200);
-        sendDeviceCommandStub.withArgs('fail').callsArgWith(2, 'error from isy', 404);
+        sendDeviceCommandStub.yields(null, true);
+        sendDeviceCommandStub.withArgs('error').yields(new Error('error from isy'), null);
+        sendDeviceCommandStub.withArgs('unsuccessful').yields(null, false);
         sendProgramCommandStub = sinon.stub(lambda._private.isy, 'sendProgramCommand');
-        sendProgramCommandStub.callsArgWith(2, null, 200);
+        sendProgramCommandStub.yields(null, true);
     });
 
     afterEach(function () {
@@ -209,12 +214,27 @@ describe('Adjust Device', function () {
     });
 
     it('should gracefully handle errors from the isy99 module', function (done) {
+        request.request.intent.slots.Device.value = 'A device that will error in the ISY99 module';
+        request.request.intent.slots.Action.value = 'on';
+
+        lambda.handler(request, {
+            succeed: function() {
+                // TODO should have a method that validates all "succeed" responses as valid Alexa responses.
+                // TODO this is not actually validating that the response is as expected.
+                done();
+            },
+            fail: fail
+        });
+    });
+
+    it('should gracefully handle an "unsuccessful" response from the ISY', function (done) {
         request.request.intent.slots.Device.value = 'A device that will fail in the ISY99 module';
         request.request.intent.slots.Action.value = 'on';
 
         lambda.handler(request, {
             succeed: function() {
                 // TODO should have a method that validates all "succeed" responses as valid Alexa responses.
+                // TODO this is not actually validating that the response is as expected.
                 done();
             },
             fail: fail
@@ -239,6 +259,130 @@ describe('Adjust Device', function () {
     it("should handle requests for an action that doesn't exist", function (done) {
         request.request.intent.slots.Device.value = 'simple device';
         request.request.intent.slots.Action.value = 'An action that does not exist in the house config';
+
+        lambda.handler(request, {
+            succeed: function() {
+                // TODO should have a method that validates all "succeed" responses as valid Alexa responses.
+                expect(sendDeviceCommandStub).to.not.have.been.called;
+                expect(sendProgramCommandStub).to.not.have.been.called;
+                done();
+            },
+            fail: fail
+        });
+    });
+});
+
+describe('Activate Scene', function () {
+    var lambda = require('../alexa-isy');
+    var request = require('./IntentRequest_ActivateSceneIntent.json');
+    var sendDeviceCommandStub;
+    var sendProgramCommandStub;
+
+    var fail = function(done) {
+        expect('this should never get called').to.be.null;
+        done();
+    };
+
+    lambda._private.config.scenes = [
+        {
+            name: 'A simple Insteon scene',
+            address: "1"
+        },
+        {
+            name: 'A scene that will error in the ISY99 module',
+            address: "error"
+        },
+        {
+            name: 'A scene that will fail in the ISY99 module',
+            address: "unsuccessful"
+        },
+        {
+            name: 'Program based scene', type: 'program', address: {
+                address:'4',
+                cmd:'runIf'
+            }
+        }
+    ];
+
+    beforeEach(function () {
+        sendDeviceCommandStub = sinon.stub(lambda._private.isy, 'sendDeviceCommand');
+        sendDeviceCommandStub.yields(null, true);
+        sendDeviceCommandStub.withArgs('error').yields(new Error('error from isy'), null);
+        sendDeviceCommandStub.withArgs('unsuccessful').yields(null, false);
+        sendProgramCommandStub = sinon.stub(lambda._private.isy, 'sendProgramCommand');
+        sendProgramCommandStub.yields(null, true);
+    });
+
+    afterEach(function () {
+        sinon.restore(lambda._private.isy, 'sendDeviceCommand');
+        sinon.restore(lambda._private.isy, 'sendProgramCommand');
+    });
+
+    it('should activate a simple Insteon scene', function (done) {
+        request.request.intent.slots.Scene.value = 'A simple Insteon scene';
+
+        lambda.handler(request, {
+            succeed: function() {
+                expect(sendDeviceCommandStub).to.have.been.calledWith('1','DON');
+                done();
+            },
+            fail: fail
+        });
+    });
+
+    it('should handle close match on scene name', function (done) {
+        request.request.intent.slots.Scene.value = 'A simpple inston scen';
+
+        lambda.handler(request, {
+            succeed: function() {
+                expect(sendDeviceCommandStub).to.have.been.calledWith('1','DON');
+                done();
+            },
+            fail: fail
+        });
+    });
+
+    it('should handle program-based scene turning on', function (done) {
+        request.request.intent.slots.Scene.value = 'Program based scene';
+
+        lambda.handler(request, {
+            succeed: function() {
+                expect(sendProgramCommandStub).to.have.been.calledWith('4','runIf');
+                done();
+            },
+            fail: fail
+        });
+    });
+
+    it('should gracefully handle errors from the isy99 module', function (done) {
+        request.request.intent.slots.Scene.value = 'A scene that will error in the ISY99 module';
+
+        lambda.handler(request, {
+            succeed: function() {
+                // TODO should have a method that validates all "succeed" responses as valid Alexa responses.
+                expect(sendDeviceCommandStub).to.have.been.calledOnce;
+                done();
+            },
+            fail: fail
+        });
+    });
+
+    it('should gracefully handle an "unsuccessful" response from the ISY', function (done) {
+        request.request.intent.slots.Scene.value = 'A scene that will fail in the ISY99 module';
+
+        lambda.handler(request, {
+            succeed: function() {
+                // TODO should have a method that validates all "succeed" responses as valid Alexa responses.
+                // TODO this is not actually validating that the response is as expected.
+                expect(sendDeviceCommandStub).to.have.been.calledOnce;
+                done();
+            },
+            fail: fail
+        });
+    });
+
+    it("should handle requests for a device that doesn't exist", function (done) {
+        request.request.intent.slots.Scene.value = 'A scene that does not exist in the house config';
 
         lambda.handler(request, {
             succeed: function() {

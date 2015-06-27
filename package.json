@@ -1,6 +1,6 @@
 {
   "name": "alexa-isy",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Alexa (Amazon Echo) app for interacting with an ISY99 home automation controller",
   "main": "alexa-isy.js",
   "dependencies": {
@@ -27,7 +27,7 @@
   "scripts": {
     "test": "grunt coveralls",
     "deploy": "deploy.bat",
-    "utterances": "node generate-sample-utterances.js > sample-utterances.txt",
+    "utterances": "node generate-sample-utterances.js > dist/sample-utterances.txt",
     "invoke": "grunt lambda_invoke"
   },
   "author": "Greg \"OverloadUT\" Laabs <OverloadUT@gmail.com>",

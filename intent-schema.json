@@ -1,0 +1,26 @@
+{
+  "intents": [
+    {
+      "intent": "AdjustDeviceIntent",
+      "slots": [
+        {
+          "name": "Device",
+          "type": "LITERAL"
+        },
+        {
+          "name": "Action",
+          "type": "LITERAL"
+        }
+      ]
+    },
+    {
+      "intent": "ActivateSceneIntent",
+      "slots": [
+        {
+          "name": "Scene",
+          "type": "LITERAL"
+        }
+      ]
+    }
+  ]
+}

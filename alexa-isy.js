@@ -10,7 +10,8 @@ var config = {
     // separate intents, as the Alexa code is likely much better at handling
     // it than we will be
     actions: require('./actions.json').actions,
-    devices: loadDevices()
+    devices: loadDevices(),
+    scenes: loadScenes()
 };
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"; // Allow untrusted self-signed certificates
@@ -25,9 +26,20 @@ function loadDevices() {
     }
 }
 
+function loadScenes() {
+    // TODO HACK to load devices from a static file for now.
+    // This should be moved to a database of some sort so that it can be configured for each user.
+    try {
+        return require('./scenes.json').scenes;
+    } catch (e) {
+        return {};
+    }
+}
+
 // Route the incoming request based on type (LaunchRequest, IntentRequest,
 // etc.) The JSON body of the request is provided in the event parameter.
 exports.handler = function (event, context) {
+    // TODO all "fail" paths should still return success so we can customize the Alexa responses
     try {
         console.log("event.session.application.applicationId=" + event.session.application.applicationId);
         console.log("event.session.user.userId=" + event.session.user.userId);
@@ -61,6 +73,7 @@ exports.handler = function (event, context) {
             context.fail("Unknown request type: " + event.request.type);
         }
     } catch (e) {
+        // TODO try catch is bad here
         context.fail("Exception: " + e);
     }
 };
@@ -95,8 +108,8 @@ function onIntent(intentRequest, session, callback) {
 
     if ("AdjustDeviceIntent" === intentName) {
         intentAdjustDevice(intent, session, callback);
-    //} else if ("ActivateSceneIntent" === intentName) {
-    //    intentActivateScene(intent, session, callback);
+    } else if ("ActivateSceneIntent" === intentName) {
+        intentActivateScene(intent, session, callback);
     } else {
         throw "Invalid intent";
     }
@@ -224,6 +237,58 @@ function intentAdjustDevice(intent, session, callback) {
             }
         }
 
+    }
+}
+
+function intentActivateScene(intent, session, callback) {
+    var didYouMean = require("didyoumean");
+    didYouMean.returnWinningObject = true;
+
+    var sessionAttributes = session.attributes || {};
+    var cardTitle = "Activate Scene";
+    var repromptText = "";
+    var shouldEndSession = true;
+
+    console.log("intentActivateScene", intent.slots);
+
+    var spokenScene = intent.slots.Scene.value;
+    var scene = didYouMean(spokenScene, config.scenes, 'name');
+
+    if (scene === null) {
+        callback(sessionAttributes,
+                 buildSpeechletResponse(cardTitle, "Sorry, I am not sure which scene that is. I heard you say " + spokenScene, repromptText, shouldEndSession));
+    } else {
+        var address;
+        var command;
+        if(typeof scene.address === 'string') {
+            // Simple scene with a single address for all commands
+            address = scene.address;
+            command = 'DON';
+        } else {
+            // Complex scene with a custom command (most likely a program)
+            address = scene.address.address;
+            command = scene.address.cmd;
+        }
+
+        var commandCallback = function(err, success){
+            if(err) {
+                console.log(err);
+                callback(sessionAttributes,
+                         buildSpeechletResponse(cardTitle, "There was an issue connecting to the home automation controller", repromptText, shouldEndSession));
+            } else {
+                console.log(success);
+                callback(sessionAttributes,
+                         buildSpeechletResponse(cardTitle, "Done!", repromptText, shouldEndSession));
+            }
+        };
+
+        if(scene.type == "program") {
+            console.log('isy.sendProgramCommand',address, command);
+            isy.sendProgramCommand(address, command, commandCallback);
+        } else {
+            console.log('isy.sendDeviceCommand',address, command);
+            isy.sendDeviceCommand(address, command, commandCallback);
+        }
     }
 }
 
